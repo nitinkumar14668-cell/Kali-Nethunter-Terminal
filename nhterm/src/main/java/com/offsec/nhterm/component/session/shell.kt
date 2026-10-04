@@ -306,13 +306,24 @@ open class ShellTermSession private constructor(
       return this
     }
 
+    // FIX: armv8l = AArch32 mode on ARMv8 chip (e.g. Samsung M01),
+    // fully compatible with armv7l binaries.
+    // Maps unsupported arch folders to the correct available one.
+    private fun normalizeArchPath(path: String): String {
+      return path
+        .replace("/bin_armv8l/", "/bin_armv7l/")
+        .replace("/bin_arm64/",  "/bin_aarch64/")
+    }
+
     fun create(context: Context): ShellTermSession {
       val cwd = this.cwd ?: NeoTermPath.HOME_PATH
 
-      val shell = this.executablePath ?: if (systemShell)
-        "/system/bin/sh"
-      else
-        shellProfile.loginShell
+      val shell = normalizeArchPath(
+        this.executablePath ?: if (systemShell)
+          "/system/bin/sh"
+        else
+          shellProfile.loginShell
+      )
 
       val args = this.args ?: mutableListOf(shell)
       val env = transformEnvironment(this.env) ?: buildEnvironment(cwd, systemShell)
